@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local AI Prompt Manager</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- =========================================
+         ICON SYSTEM (SVG Sprites)
+         ========================================= -->
+    <svg style="display: none;">
+        <!-- Navigation & Actions -->
+        <symbol id="icon-folder" viewBox="0 0 24 24"><path fill="currentColor" d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></symbol>
+        <symbol id="icon-plus" viewBox="0 0 24 24"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></symbol>
+        <symbol id="icon-upload" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></symbol>
+        <symbol id="icon-refresh" viewBox="0 0 24 24"><path fill="currentColor" d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></symbol>
+        <symbol id="icon-trash" viewBox="0 0 24 24"><path fill="currentColor" d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></symbol>
+        <symbol id="icon-edit" viewBox="0 0 24 24"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></symbol>
+        <symbol id="icon-copy" viewBox="0 0 24 24"><path fill="currentColor" d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></symbol>
+        <symbol id="icon-check" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></symbol>
+        <symbol id="icon-minus" viewBox="0 0 24 24"><path fill="currentColor" d="M19 13H5v-2h14v2z"/></symbol>
+        <symbol id="icon-info" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></symbol>
+        
+        <!-- UI & Filters -->
+        <symbol id="icon-search" viewBox="0 0 24 24"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></symbol>
+        <symbol id="icon-filter" viewBox="0 0 24 24"><path fill="currentColor" d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></symbol>
+        <symbol id="icon-settings" viewBox="0 0 24 24"><path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></symbol>
+        <symbol id="icon-book" viewBox="0 0 24 24"><path fill="currentColor" d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></symbol>
+        <symbol id="icon-star" viewBox="0 0 24 24"><path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></symbol>
+        <symbol id="icon-star-outline" viewBox="0 0 24 24"><path fill="currentColor" d="M22 9.24l-7.19-.62L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.63-7.03L22 9.24zM12 15.4l-3.76 2.27 1-4.28-3.32-2.88 4.38-.38L12 6.1l1.71 4.01 4.38.38-3.32 2.88 1 4.28L12 15.4z"/></symbol>
+
+        <!-- Prompt Elements -->
+        <symbol id="icon-image" viewBox="0 0 24 24"><path fill="currentColor" d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></symbol>
+        <symbol id="icon-wildcard" viewBox="0 0 24 24"><path fill="currentColor" d="M13 7h-2v4H7v2h4v4h2v-4h4v-2h-4V7zm-1-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></symbol>
+        <symbol id="icon-braces" viewBox="0 0 24 24"><path fill="currentColor" d="M8.7 21.4l.8-2.5c.3-1 .8-1.6 1.5-1.9.5-.2 1.1-.3 2.1-.3v-2c-1.3 0-2.2.2-2.8.7-.6.4-1.1 1.1-1.5 2.1l-.5 1.6H8v2.3h.7zm7.6-18.8l-.8 2.5c-.3 1-.8 1.6-1.5 1.9-.5.2-1.1.3-2.1.3v2c1.3 0 2.2-.2 2.8-.7.6-.4 1.1-1.1 1.5-2.1l.5-1.6h.3V2.6h-.7z"/></symbol>
+    </svg>
+
+    <div class="app-container">
+        
+        <!-- =========================================
+             SIDEBAR
+             ========================================= -->
+        <aside class="sidebar">
+            <div class="logo-area">
+                <h2>Prompt<span class="accent">Manager</span></h2>
+            </div>
+            
+            <!-- Folder Connection Status -->
+            <div class="folder-actions">
+                <div class="folder-status" id="folder-status">
+                    <div class="status-dot"></div>
+                    <span id="folder-name">No Folder</span>
+                </div>
+                <button class="icon-btn small" id="btn-refresh" title="Refresh Data" disabled style="opacity: 0.3;">
+                    <svg><use href="#icon-refresh"/></svg>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav>
+                <div class="nav-group">
+                    <label>Main</label>
+                    <button class="nav-btn active" data-view="library">
+                        <svg class="icon"><use href="#icon-folder"/></svg> Library
+                    </button>
+                    <button class="nav-btn" data-view="editor" onclick="app.openEditor()">
+                        <svg class="icon"><use href="#icon-plus"/></svg> New Prompt
+                    </button>
+                    <!-- Import Button -->
+                    <button class="nav-btn" onclick="document.getElementById('import-input').click()">
+                        <svg class="icon"><use href="#icon-upload"/></svg> Import Images
+                    </button>
+                    <input type="file" id="import-input" accept="image/png, image/jpeg" multiple hidden>
+                </div>
+
+                <div class="nav-group">
+                    <label>Data</label>
+                    <button class="nav-btn" data-view="wildcards">
+                        <svg class="icon"><use href="#icon-wildcard"/></svg> Wildcards
+                    </button>
+                    <button class="nav-btn" data-view="placeholders">
+                        <svg class="icon"><use href="#icon-braces"/></svg> Placeholders
+                    </button>
+                </div>
+
+                <div class="nav-group">
+                    <label>App</label>
+                    <button class="nav-btn" data-view="settings">
+                        <svg class="icon"><use href="#icon-settings"/></svg> Settings
+                    </button>
+                    <button class="nav-btn" data-view="tutorial">
+                        <svg class="icon"><use href="#icon-book"/></svg> Guide
+                    </button>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="btn-primary full-width" id="btn-connect">
+                    Connect Folder
+                </button>
+            </div>
+        </aside>
+
+        <!-- =========================================
+             MAIN CONTENT AREA
+             ========================================= -->
+        <main class="main-content">
+            
+            <!-- VIEW: Library (Main) -->
+            <section id="view-library" class="view active">
+                <header class="sticky-header">
+                    <div class="search-container">
+                        <div class="search-bar">
+                            <svg class="icon-search-ui"><use href="#icon-search"/></svg>
+                            <input type="text" id="search-input" placeholder="Search prompts, tags...">
+                        </div>
+                        <button class="icon-btn large" id="btn-toggle-filter" title="Advanced Filters">
+                            <svg class="icon"><use href="#icon-filter"/></svg>
+                        </button>
+                    </div>
+                    
+                    <div class="header-actions">
+                        <select id="sort-select">
+                            <option value="newest">Newest</option>
+                            <option value="oldest">Oldest</option>
+                            <option value="az">A-Z</option>
+                        </select>
+                    </div>
+                </header>
+                
+                <!-- Advanced Filters Panel -->
+                <div id="advanced-filters" class="advanced-filters hidden">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label>Must contain tag:</label>
+                            <input type="text" id="filter-tag-include" placeholder="e.g. cyberpunk">
+                        </div>
+                        <div class="filter-group">
+                            <label>Exclude tag:</label>
+                            <input type="text" id="filter-tag-exclude" placeholder="e.g. nsfw">
+                        </div>
+                    </div>
+                    <div class="filter-row">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="filter-favorite">
+                            <span>Favorites Only</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="filter-lora">
+                            <span>LoRA</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="filter-embed">
+                            <span>Embeddings</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="filter-wildcard">
+                            <span>Wildcards</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="filter-placeholder">
+                            <span>Placeholders</span>
+                        </label>
+                        <button class="btn-text" id="btn-clear-filters" style="margin-left: auto;">Clear Filters</button>
+                    </div>
+                </div>
+
+                <!-- State: Empty / Welcome -->
+                <div id="library-empty-state" class="center-message">
+                    <div class="empty-content">
+                        <h3>Welcome</h3>
+                        <p>Connect a folder to start managing your Local AI Prompts.</p>
+                        <button class="btn-secondary" onclick="document.getElementById('btn-connect').click()">Connect Now</button>
+                    </div>
+                </div>
+                
+                <!-- State: No Results -->
+                <div id="library-no-results" class="center-message hidden">
+                    <div class="empty-content">
+                        <h3>No Results</h3>
+                        <p>Try adjusting your filters.</p>
+                    </div>
+                </div>
+
+                <!-- Grid: Cards injected here via JS -->
+                <div id="prompt-grid" class="grid-container hidden"></div>
+            </section>
+
+            <!-- VIEW: Editor -->
+            <section id="view-editor" class="view hidden">
+                <header class="sticky-header">
+                    <h3><span id="editor-mode-text">Create</span> Prompt</h3>
+                    <div class="actions">
+                        <button class="btn-secondary" id="btn-cancel-edit">Cancel</button>
+                        <button class="btn-primary" id="btn-save-prompt">Save Prompt</button>
+                    </div>
+                </header>
+                
+                <div class="editor-layout">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" id="inp-name" placeholder="e.g. Cyberpunk City street">
+                    </div>
+
+                    <!-- Positive Tags -->
+                    <div class="form-group">
+                        <label>Tags / Prompt (Positive)</label>
+                        <div class="tag-editor" id="tag-editor-container">
+                            <div id="tag-list" class="tag-list"></div>
+                            <input type="text" id="inp-tags" placeholder="Type and press Enter..." autocomplete="off">
+                            <ul id="autocomplete-list" class="autocomplete-list hidden"></ul>
+                        </div>
+                        <small class="hint">Press <code>Enter</code> to add tag. Drag tags to reorder.</small>
+                    </div>
+
+                    <!-- Negative Tags -->
+                    <div class="form-group">
+                        <label>Negative Prompt</label>
+                        <div class="tag-editor negative" id="tag-editor-neg-container">
+                            <div id="tag-list-neg" class="tag-list"></div>
+                            <input type="text" id="inp-tags-neg" placeholder="Type negative tags..." autocomplete="off">
+                        </div>
+                    </div>
+
+                    <!-- Image Reference -->
+                    <div class="form-group">
+                        <label>Reference Image</label>
+                        <div class="drop-zone" id="drop-zone">
+                            <div class="drop-msg">
+                                <svg class="icon large"><use href="#icon-image"/></svg>
+                                <p>Drag & Drop image here or Click to Browse</p>
+                            </div>
+                            <img id="preview-image" class="hidden" src="" alt="Preview">
+                            <div class="image-actions hidden" id="image-actions">
+                                <button class="btn-danger-sm" id="btn-remove-image">Remove Image</button>
+                            </div>
+                        </div>
+                        <input type="file" id="file-input" accept="image/*" hidden>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: Wildcards -->
+            <section id="view-wildcards" class="view hidden">
+                <header class="sticky-header">
+                    <h3>Wildcards Manager</h3>
+                    <button class="btn-primary" id="btn-save-wildcard-file">Save Current File</button>
+                </header>
+                <div class="split-layout">
+                    <div class="sidebar-list">
+                        <div class="list-header">
+                            <h4>Files (.txt)</h4>
+                            <button class="icon-btn small" id="btn-new-wildcard" title="New File"><svg><use href="#icon-plus"/></svg></button>
+                        </div>
+                        <div id="wildcard-file-list" class="scroll-list"></div>
+                    </div>
+                    <div class="editor-pane">
+                        <div class="pane-header">
+                            <span id="current-wildcard-name">Select a file...</span>
+                        </div>
+                        <textarea id="txt-wildcard-content" class="code-editor" spellcheck="false" placeholder="Select a wildcard file to edit..."></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: Placeholders -->
+            <section id="view-placeholders" class="view hidden">
+                <header class="sticky-header">
+                    <h3>Placeholders Manager</h3>
+                    <button class="btn-primary" id="btn-add-placeholder">
+                        <svg style="width:16px;height:16px;margin-right:5px;vertical-align:middle"><use href="#icon-plus"/></svg> Add New
+                    </button>
+                </header>
+                <div class="placeholder-container">
+                    <div class="info-box">
+                        <p>Manage your quick replacements. Use the switch to Enable/Disable specific replacements without deleting them.</p>
+                    </div>
+                    <div class="ph-table-header">
+                        <div class="ph-col-key">Key (e.g. artist)</div>
+                        <div class="ph-col-val">Value</div>
+                        <div class="ph-col-active">Active</div>
+                        <div class="ph-col-action"></div>
+                    </div>
+                    <div id="placeholder-list" class="placeholder-list">
+                        <!-- Rows injected here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: Settings -->
+            <section id="view-settings" class="view hidden">
+                <header class="sticky-header">
+                    <h3>Settings</h3>
+                </header>
+                <div class="settings-container">
+                    
+                    <!-- Group: External Data -->
+                    <div class="settings-group">
+                        <h5 class="group-title">External Data</h5>
+                        <div class="setting-item vertical">
+                            <div class="setting-info">
+                                <h4>Tag Dictionary (CSV)</h4>
+                                <p>Load a generic CSV file to enhance autocomplete suggestions (e.g., Danbooru tags).</p>
+                                <p class="text-muted" style="font-size: 0.8rem; margin-top: 5px;">Status: <span id="dict-status">No dictionary loaded</span></p>
+                            </div>
+                            <div style="margin-top: 10px; display: flex; gap: 10px;">
+                                <button class="btn-secondary" onclick="document.getElementById('dict-input').click()">Load CSV</button>
+                                <input type="file" id="dict-input" accept=".csv,.txt" hidden>
+                                <button class="btn-danger-sm" id="btn-clear-dict">Clear</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Group: Defaults -->
+                    <div class="settings-group">
+                        <h5 class="group-title">Defaults</h5>
+                        <div class="setting-item vertical">
+                            <div class="setting-info">
+                                <h4>Default Positive Tags</h4>
+                                <p>Automatically added when creating a new prompt (comma separated).</p>
+                            </div>
+                            <textarea id="setting-def-pos" class="setting-textarea" placeholder="e.g. high quality, 4k, masterpiece"></textarea>
+                        </div>
+                        <div class="setting-item vertical">
+                            <div class="setting-info">
+                                <h4>Default Negative Tags</h4>
+                                <p>Automatically added when creating a new prompt (comma separated).</p>
+                            </div>
+                            <textarea id="setting-def-neg" class="setting-textarea" placeholder="e.g. low quality, watermark, blur"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Group: Appearance -->
+                    <div class="settings-group">
+                        <h5 class="group-title">Appearance</h5>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Grid Columns: <span id="lbl-cols">3</span></h4>
+                                <p>Number of columns in the library view (controls image size).</p>
+                            </div>
+                            <input type="range" id="setting-grid-cols" min="1" max="6" value="3" class="setting-range">
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Compact Grid</h4>
+                                <p>Reduce padding in prompt cards.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="setting-compact">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Group: Image Optimization -->
+                    <div class="settings-group">
+                        <h5 class="group-title">Image Optimization (On Upload)</h5>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Target Format</h4>
+                                <p>Convert uploaded images to specific format.</p>
+                            </div>
+                            <select id="setting-img-format" class="setting-select">
+                                <option value="original">Keep Original</option>
+                                <option value="jpeg">JPEG</option>
+                                <option value="webp">WEBP</option>
+                                <option value="png">PNG</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Quality: <span id="lbl-quality">90</span>%</h4>
+                                <p>Compression level (JPEG/WEBP only).</p>
+                            </div>
+                            <input type="range" id="setting-img-quality" min="10" max="100" value="90" class="setting-range">
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Max Resolution (px)</h4>
+                                <p>Resize if larger than value (0 = No Resize).</p>
+                            </div>
+                            <input type="number" id="setting-img-maxres" value="0" min="0" step="128" class="setting-input-num">
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Strip Metadata</h4>
+                                <p>Remove EXIF data to reduce size and protect privacy.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="setting-strip-meta">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                         <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Auto-Delete Images</h4>
+                                <p>Delete the referenced image file when deleting (or removing from) a prompt.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="setting-del-img">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Group: Clipboard -->
+                    <div class="settings-group">
+                        <h5 class="group-title">Clipboard / Copying</h5>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Exclude LoRA</h4>
+                                <p>Remove <code>&lt;lora:...&gt;</code> tags when copying.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="setting-copy-lora">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Exclude Embeddings</h4>
+                                <p>Remove <code>embedding:...</code> tags when copying.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="setting-copy-embed">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                         <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Exclude BREAK</h4>
+                                <p>Remove <code>BREAK</code> keywords when copying.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="setting-copy-break">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Normalize Weights</h4>
+                                <p>Convert <code>(text:1.2)</code> or <code>((text))</code> to plain text.</p>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="setting-copy-norm">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Group: Danger -->
+                    <div class="settings-group">
+                        <h5 class="group-title">Danger Zone</h5>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Clear App Cache</h4>
+                                <p>Resets settings and internal state (does not delete your files).</p>
+                            </div>
+                            <button class="btn-secondary" onclick="localStorage.clear(); location.reload()">Reset App</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+             <!-- VIEW: Tutorial -->
+             <section id="view-tutorial" class="view hidden">
+                <header class="sticky-header">
+                    <h3>User Guide</h3>
+                    <button class="btn-primary" id="btn-start-tour">
+                        <svg style="width:16px;height:16px;margin-right:5px"><use href="#icon-search"/></svg> Start Interactive Tour
+                    </button>
+                </header>
+                <div class="tutorial-content" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; max-width: 1000px;">
+                    <div class="col">
+                        <article>
+                            <h4>1. Getting Started</h4>
+                            <p>This app runs locally. Click <strong>Connect Folder</strong> to create a library. We create a <code>prompts.json</code> file and an <code>img/</code> folder in your chosen directory. No data leaves your device.</p>
+                        </article>
+                        
+                        <article>
+                            <h4>2. Editor & Syntax Highlighting</h4>
+                            <p>Create prompts with visual tags. The editor supports:</p>
+                            <ul style="list-style: none; padding: 0;">
+                                <li style="margin-bottom: 5px;"><span class="tag-pill type-lora">&lt;lora:name:1&gt;</span> Blue (LoRA)</li>
+                                <li style="margin-bottom: 5px;"><span class="tag-pill type-embed">embedding:name</span> Purple (Embedding)</li>
+                                <li style="margin-bottom: 5px;"><span class="tag-pill type-wildcard">__wildcard__</span> Green (Wildcards)</li>
+                                <li style="margin-bottom: 5px;"><span class="tag-pill type-placeholder">{placeholder}</span> Yellow (Placeholders)</li>
+                                <li><span class="tag-pill type-break">BREAK</span> Red (Break)</li>
+                            </ul>
+                        </article>
+                        
+                        <article>
+                            <h4>3. Shortcuts & Navigation</h4>
+                            <p>Use these keys to work faster in the editor:</p>
+                            <ul>
+                                <li><kbd>Enter</kbd> or <kbd>,</kbd> : Add the current typed text as a tag.</li>
+                                <li><kbd>Backspace</kbd> (on empty input): Remove the last tag.</li>
+                                <li><kbd>Tab</kbd> : Auto-complete a suggested tag.</li>
+                                <li><kbd>Drag & Drop</kbd> : Reorder tags by dragging them.</li>
+                            </ul>
+                        </article>
+                    </div>
+                    
+                    <div class="col">
+                        <article>
+                            <h4>4. Import & Metadata</h4>
+                            <p><strong>Single Image:</strong> Drag an image into the editor or use the Import button. We extract parameters (Prompt, Model, Seed) from A1111/ComfyUI PNGs.</p>
+                            <p><strong>Bulk Import:</strong> Select multiple images to automatically add them to your library. We save copies in the <code>img/</code> folder.</p>
+                        </article>
+                        
+                        <article>
+                            <h4>5. Bulk Operations</h4>
+                            <p>Select multiple cards in the library by clicking the circle icon in the top-left of each card. A batch toolbar will appear allowing you to delete multiple prompts or add/remove tags from all selected items at once.</p>
+                        </article>
+                        
+                        <article>
+                            <h4>6. Dynamic Prompts</h4>
+                            <p><strong>Wildcards:</strong> Create text files (e.g., <code>hair_styles.txt</code>) in the Wildcards tab. Use <code>__hair_styles__</code> in a prompt. Copying the prompt picks a random line from the file.</p>
+                            <p><strong>Placeholders:</strong> Variables for quick swaps. Define <code>artist</code> = <code>picasso</code>. Use <code>{artist}</code> in a prompt. It is replaced when you copy.</p>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+    
+    <!-- =========================================
+         FIXED OVERLAYS & MODALS
+         ========================================= -->
+
+    <!-- Bulk Operations Toolbar (Floating) -->
+    <div id="batch-bar" class="batch-bar hidden">
+        <div class="batch-info"><span id="batch-count">0</span> Selected</div>
+        <div class="batch-actions">
+            <button class="btn-secondary" onclick="app.clearSelection()">Deselect All</button>
+            <button class="btn-secondary" onclick="app.openBulkTagModal('add')">Add Tags</button>
+            <button class="btn-secondary" onclick="app.openBulkTagModal('remove')">Remove Tags</button>
+            <button class="btn-danger-sm" onclick="app.bulkDelete()">Delete Selected</button>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <!-- Interactive Tour Overlay -->
+    <div id="tour-overlay" class="tour-overlay hidden">
+        <div id="tour-focus-box" class="tour-focus-box"></div>
+        <div id="tour-tooltip" class="tour-tooltip">
+            <h4 id="tour-title">Title</h4>
+            <p id="tour-desc">Description text here.</p>
+            <div class="tour-actions">
+                <button class="btn-text" id="btn-tour-skip">Skip</button>
+                <button class="btn-primary" id="btn-tour-next">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Bulk Tagging -->
+    <div id="bulk-tag-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4><span id="bulk-mode-text">Add</span> Tags to Batch</h4>
+                <button class="icon-btn" onclick="document.getElementById('bulk-tag-modal').classList.add('hidden')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem;">
+                <p style="margin-bottom: 0.5rem; color: var(--text-muted);">Separate tags with commas.</p>
+                <input type="text" id="bulk-tag-input" class="setting-textarea" style="height: 40px; width: 100%;" placeholder="e.g. masterpiece, best quality">
+            </div>
+            <div class="modal-footer" style="padding: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn-secondary" onclick="document.getElementById('bulk-tag-modal').classList.add('hidden')">Cancel</button>
+                <button class="btn-primary" id="btn-confirm-bulk">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Import Confirmation -->
+    <div id="import-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>Import Images</h4>
+                <button class="icon-btn" onclick="document.getElementById('import-modal').classList.add('hidden')">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem;">
+                <p style="margin-bottom: 1rem; color: var(--text-main);">
+                    Found <strong id="import-count" style="color: var(--accent);">0</strong> images. 
+                    Do you want to process them automatically?
+                </p>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                    This will extract metadata (CivitAI/A1111), save files to your <code>img/</code> folder, and add them to your library.
+                </p>
+                <div id="import-preview-list" class="import-list"></div>
+            </div>
+            <div class="modal-footer" style="padding: 1rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn-secondary" onclick="document.getElementById('import-modal').classList.add('hidden')">Cancel</button>
+                <button class="btn-primary" id="btn-confirm-import">Start Import</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Image Info -->
+    <div id="info-modal" class="modal hidden" onclick="if(event.target === this) app.closeInfo()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>Image Information</h4>
+                <button class="icon-btn" onclick="app.closeInfo()">&times;</button>
+            </div>
+            <div class="info-grid" id="info-grid">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
