@@ -2,7 +2,9 @@
 
 A local, lightweight, and powerful tool to organize, manage, and generate prompts for AI Image Generation (Stable Diffusion, Flux, Midjourney, etc.).
 
-**It runs entirely in your browser but saves data directly to your local hard drive.** No cloud, no servers, no data leaks.
+![](https://github.com/xLegende/Prompt-Manager/blob/main/img/prompt-manager-preview.gif)
+
+**It runs entirely in your browser but saves data directly to your local hard drive.** No cloud, no servers.
 
 ## 🚀 Key Features
 
@@ -93,5 +95,6 @@ The main view shows all your saved prompts.
 ---
 
 ## 📄 License
+
 
 Distributed under the Apache License 2.0. See `LICENSE` for more information.
